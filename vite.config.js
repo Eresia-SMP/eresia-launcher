@@ -1,5 +1,6 @@
 const svelte = require("@sveltejs/vite-plugin-svelte");
 const path = require("path");
+const sveltePreprocess = require("svelte-preprocess");
 
 /**
  * @type {import('vite').UserConfig}
@@ -17,7 +18,11 @@ const config = {
         emptyOutDir: true,
     },
 
-    plugins: [svelte()],
+    plugins: [
+        svelte({
+            preprocess: sveltePreprocess(),
+        }),
+    ],
 };
 
 export default config;

@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "target": "ES2019",
+        "module": "ESNext",
+        "moduleResolution": "Node"
+    },
+    "include": ["./**/*.ts", "./**/*.svelte"]
+}
