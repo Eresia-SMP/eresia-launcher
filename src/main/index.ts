@@ -12,6 +12,7 @@ class createWin {
             webPreferences: {
                 nodeIntegration: true,
                 enableRemoteModule: true,
+                webSecurity: false,
             },
             backgroundColor: "#292D3E",
         });
