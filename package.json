@@ -4,7 +4,10 @@
     "main": "dist/main/index.js",
     "license": "MIT",
     "scripts": {
-        "build": "gulp && vite build"
+        "build": "gulp && vite build",
+        "watch:renderer": "vite",
+        "watch:main": "concurrently \"gulp watch\" \"nodemon --watch dist/main --exec \\\"electron .\\\"\"",
+        "dev": "yarn build && concurrently \"yarn watch:renderer\" \"yarn watch:main\""
     },
     "dependencies": {
         "electron": "^12.0.6",
@@ -17,8 +20,10 @@
         "@types/extract-zip": "^2.0.1",
         "@types/node-fetch": "^2.5.10",
         "autoprefixer": "^10.2.6",
+        "concurrently": "^6.2.0",
         "gulp": "^4.0.2",
         "gulp-typescript": "^6.0.0-alpha.1",
+        "nodemon": "^2.0.7",
         "postcss": "^8.3.0",
         "prettier": "^2.3.0",
         "svelte": "^3.38.1",

@@ -1,8 +1,4 @@
-import {
-    DownloadState,
-    JVMVersion,
-    getJreVersionLink,
-} from "../common/jvmVersionManager";
+import type { DownloadState, JVMVersion } from "../common/jvmVersionManager";
 import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -10,6 +6,7 @@ import * as path from "path";
 import * as process from "process";
 import fetch from "node-fetch";
 import * as extract from "extract-zip";
+import * as jreVersionLinks from "./jreVersionLinks.json";
 
 export default class JvmVersionsManager {
     public basePath: string;
@@ -42,8 +39,15 @@ export default class JvmVersionsManager {
         });
     }
 
-    getJreVersionLink(v: JVMVersion) {
-        return getJreVersionLink(v, process.platform, os.arch());
+    getJreVersionLink(v: JVMVersion): { link: string; date: Date } | null {
+        const k = v + "_" + process.platform + "_" + os.arch();
+        if (!(k in jreVersionLinks)) return null;
+        const { link, date } =
+            jreVersionLinks[k as keyof typeof jreVersionLinks];
+        return {
+            link,
+            date: new Date(date),
+        };
     }
 
     getJVMDownloadState(v: JVMVersion): DownloadState {

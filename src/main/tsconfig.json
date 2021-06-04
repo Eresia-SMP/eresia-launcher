@@ -3,7 +3,8 @@
         "strict": true,
         "target": "ES2020",
         "module": "CommonJS",
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "resolveJsonModule": true
     },
     "include": ["./**/*.ts", "../common/**/*.ts"]
 }
