@@ -12,6 +12,7 @@ module.exports = {
                     3: "#4B5169",
                 },
             },
+            minWidth: t => t("spacing"),
         },
     },
     variants: {
