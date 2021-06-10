@@ -4,3 +4,8 @@ export type MinecraftVersion = {
     type: "release" | "snapshot";
     downloadProgress: number;
 };
+
+export interface McVersionManagerApi {
+    getAllVersions(): Promise<string>;
+    getVersion(id: string): Promise<MinecraftVersion | null>;
+}

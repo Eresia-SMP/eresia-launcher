@@ -10,9 +10,8 @@ function createWindow() {
         width: 800,
         height: 800,
         webPreferences: {
-            nodeIntegration: true,
-            enableRemoteModule: true,
             webSecurity: false,
+            preload: path.resolve(__dirname, "preload.js"),
         },
         backgroundColor: "#292D3E",
     });

@@ -1,22 +1,12 @@
 import type { MinecraftVersion } from "../../common/minecraftVersionManager";
-import { app, ipcMain } from "electron";
+import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as process from "process";
 import fetch from "node-fetch";
-import * as extract from "extract-zip";
-import * as jreVersionLinks from "../jreVersionLinks.json";
 import * as _ from "lodash";
-import {
-    LinkToJson,
-    VersionAssetIndexes,
-    VersionData,
-    VersionDataArgument,
-    VersionDataDownload,
-    VersionDataLibrary,
-    VersionDataRule,
-} from "./types";
+import { LinkToJson, VersionData, VersionDataRule } from "./types";
 import * as config from "./config.json";
 import * as sha1File from "sha1-file";
 
@@ -102,7 +92,7 @@ export default class MinecraftVersionManager {
         );
         ipcMain.handle("getMinecraftVersion", (a, id: string) => {
             if (!_.isString(id)) throw "Invalid argument";
-            this.getVersion(id);
+            return this.getVersion(id);
         });
     }
     async updateFiles() {
