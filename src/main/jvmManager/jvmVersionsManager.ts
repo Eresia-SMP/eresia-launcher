@@ -30,9 +30,9 @@ export async function init() {
         if (v !== 8 && v !== 11) throw "Invalid argument";
         return getJVMDownloadState(v);
     });
-    ipcMain.handle("startJVMDownload", (e, v: JVMVersion) => {
+    ipcMain.handle("downloadJVMVersion", (e, v: JVMVersion) => {
         if (v !== 8 && v !== 11) throw "Invalid argument";
-        return startJVMDownload(v, p =>
+        return downloadJVMVersion(v, p =>
             e.sender.send("jvmVersionDownloadProgress", v, p)
         );
     });
@@ -67,7 +67,7 @@ export function getJVMDownloadState(v: JVMVersion): JVMDownloadState {
     else return state;
 }
 
-export async function startJVMDownload(
+export async function downloadJVMVersion(
     v: JVMVersion,
     onProgress?: (bytes: number, state: JVMDownloadState) => void
 ): Promise<boolean> {
@@ -85,51 +85,46 @@ export async function startJVMDownload(
     const response = await fetch(update.link);
     const isOk = response.ok;
 
-    queueMicrotask(() => {
-        const contentLength = parseInt(
-            response.headers.get("Content-Length") || "0"
-        );
+    const tempFile = path.join(
+        tempFolder,
+        Array(50)
+            .fill("")
+            .map(_ => Math.floor(Math.random() * 10).toString())
+            .join("")
+    );
+    const writeStream = fs.createWriteStream(tempFile);
+    response.body.pipe(writeStream);
+    let downloadState: JVMDownloadState = {
+        type: "downloading",
+        downloadedSize: 0,
+        totalSize: update.size,
+    };
+    downloadStates.set(v, downloadState);
 
-        const tempFile = path.join(
-            tempFolder,
-            Array(50)
-                .fill("")
-                .map(_ => Math.floor(Math.random() * 10).toString())
-                .join("")
-        );
-        const writeStream = fs.createWriteStream(tempFile);
-        response.body.pipe(writeStream);
-        let downloadState: JVMDownloadState = {
-            type: "downloading",
-            downloadedSize: 0,
+    let lastChunkSize = 0;
+    response.body.on("data", (chunk: Buffer) => {
+        if (downloadState.type !== "downloading") return;
+
+        lastChunkSize = chunk.length;
+        downloadState.downloadedSize += chunk.length;
+        if (downloadState.downloadedSize !== downloadState.totalSize)
+            onProgress?.(chunk.length, downloadState);
+    });
+    response.body.on("end", async () => {
+        writeStream.close();
+
+        console.log(tempFile);
+        await extract(tempFile, {
+            dir: path.resolve(mainFolderPath, "jvm", v.toString()),
+        });
+
+        downloadState = {
+            type: "downloaded",
             totalSize: update.size,
+            updateDate: update.date,
         };
         downloadStates.set(v, downloadState);
-
-        let lastChunkSize = 0;
-        response.body.on("data", (chunk: Buffer) => {
-            if (downloadState.type !== "downloading") return;
-
-            lastChunkSize = chunk.length;
-            downloadState.downloadedSize += chunk.length;
-            if (downloadState.downloadedSize !== downloadState.totalSize)
-                onProgress?.(chunk.length, downloadState);
-        });
-        response.body.on("end", async () => {
-            writeStream.close();
-
-            await extract(tempFile, {
-                dir: path.resolve(mainFolderPath, "jvm", v.toString()),
-            });
-
-            downloadState = {
-                type: "downloaded",
-                totalSize: update.size,
-                updateDate: update.date,
-            };
-            downloadStates.set(v, downloadState);
-            onProgress?.(lastChunkSize, downloadState);
-        });
+        onProgress?.(lastChunkSize, downloadState);
     });
 
     return isOk;

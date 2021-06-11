@@ -181,13 +181,16 @@ async function downloadVersion(
             (async () => {
                 const jvmVersion = downloadState.jvmToDownload;
                 if (_.isUndefined(jvmVersion)) return;
-                JVMVersionManager.startJVMDownload(jvmVersion, (bytes, _) => {
-                    downloadState.downloadedSize += bytes;
-                    onProgress?.(
-                        downloadState.downloadedSize,
-                        downloadState.totalSize
-                    );
-                });
+                await JVMVersionManager.downloadJVMVersion(
+                    jvmVersion,
+                    (bytes, _) => {
+                        downloadState.downloadedSize += bytes;
+                        onProgress?.(
+                            downloadState.downloadedSize,
+                            downloadState.totalSize
+                        );
+                    }
+                );
             })(),
         ]);
         return true;
