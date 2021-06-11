@@ -1,12 +1,37 @@
-import * as path from "path";
 import { app, BrowserWindow } from "electron";
+import * as fs from "fs";
+import * as path from "path";
+import fetch from "node-fetch";
+import * as _ from "lodash";
+import * as sha1File from "sha1-file";
 import * as isDev from "electron-is-dev";
-import JvmVersionsManager from "./jvmVersionsManager";
-import MinecraftVersionManager from "./minecraftLauncher/versionManager";
+import * as VersionManager from "./minecraftLauncher/versionManager";
 
-let win = null;
+export let mainFolderPath: string = "";
+let window: BrowserWindow | null = null;
+
+app.on("ready", async () => {
+    mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
+
+    await VersionManager.init();
+
+    createWindow();
+});
+
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+        app.quit();
+    }
+});
+
+app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});
+
 function createWindow() {
-    win = new BrowserWindow({
+    window = new BrowserWindow({
         width: 800,
         height: 800,
         webPreferences: {
@@ -20,34 +45,42 @@ function createWindow() {
         ? `http://localhost:1234`
         : `file://${path.resolve(__dirname, "dist/renderer/index.html")}`;
 
-    win.loadURL(URL);
+    window.loadURL(URL);
 }
 
-let gameFilesPath;
-let jvmVersionsManager;
-let minecraftVersionManager;
+/*
+ * UTILS
+ */
 
-(async () => {
-    await app.whenReady();
-
-    gameFilesPath = path.resolve(app.getPath("appData"), ".eresia_smp");
-    jvmVersionsManager = new JvmVersionsManager(
-        path.resolve(gameFilesPath, "jvm")
+export async function downloadFile(url: string, ...p: string[]): Promise<void> {
+    const fullPath = path.resolve(mainFolderPath, ...p);
+    await fs.promises.mkdir(path.parse(fullPath).dir, {
+        recursive: true,
+    });
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(response.statusText);
+    response.body.pipe(fs.createWriteStream(fullPath));
+    await new Promise<void>(resolve =>
+        response.body.once("end", () => resolve())
     );
-    minecraftVersionManager = new MinecraftVersionManager(gameFilesPath);
-    createWindow();
-
-    await minecraftVersionManager.updateFiles();
-})();
-
-app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-        app.quit();
+}
+export async function readFileToString(
+    p: string | string[],
+    encoding?: BufferEncoding
+): Promise<string> {
+    const buffer = await fs.promises.readFile(
+        path.resolve(mainFolderPath, ..._.castArray(p))
+    );
+    return buffer.toString(encoding ?? "utf8");
+}
+export async function fileExists(...p: string[]): Promise<boolean> {
+    try {
+        await fs.promises.access(path.resolve(mainFolderPath, ...p));
+        return true;
+    } catch (error) {
+        return false;
     }
-});
-
-app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
-});
+}
+export function getFileSHA1(...p: string[]): Promise<string> {
+    return sha1File(path.resolve(mainFolderPath, ...p));
+}
