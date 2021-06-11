@@ -1,4 +1,5 @@
 import type { McVersion } from "../../common/mcVersionManager";
+import { JVMVersion } from "../../common/jvmVersionManager";
 import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -14,6 +15,7 @@ import {
     getFileSHA1,
     readFileToString,
 } from "../index";
+import * as JVMVersionManager from "../jvmManager/jvmVersionsManager";
 
 let versions: Map<string, VersionData> = new Map();
 let versionsDataUrls: Map<string, LinkToJson<VersionData>> = new Map();
@@ -85,18 +87,21 @@ async function getVersionDownloadState(id: string): Promise<
     | "full"
     | {
           totalSize: number;
-          progress: number;
+          downloadedSize: number;
           files: [path: string, url: string][];
+          jvmToDownload?: JVMVersion;
       }
     | null
 > {
     const data = await getVersionData(id, true);
     if (!_.isObject(data)) return null;
     let totalSize = 0;
-    let progress = 0;
+    let downloadedSize = 0;
     const files: [path: string, url: string][] = [];
+    let jvmToDownload: undefined | JVMVersion = undefined;
 
     await Promise.all([
+        // Client jar file download
         (async () => {
             totalSize += data.downloads.client.size;
 
@@ -105,14 +110,29 @@ async function getVersionDownloadState(id: string): Promise<
                 (await fileExists(p)) &&
                 (await getFileSHA1(p)) === data.downloads.client.sha1
             )
-                progress += data.downloads.client.size;
+                downloadedSize += data.downloads.client.size;
             else files.push([p, data.downloads.client.url]);
         })(),
-        (async () => {})(),
+        // JVM Version download
+        (async () => {
+            let targetJvm = data.javaVersion?.majorVersion as JVMVersion;
+            if (targetJvm !== 8 && targetJvm !== 11) targetJvm = 11;
+            const downloadState =
+                JVMVersionManager.getJVMDownloadState(targetJvm);
+            let updateSize;
+            if (downloadState.type === "outdated")
+                updateSize = downloadState.updateSize;
+            else updateSize = downloadState.totalSize;
+            totalSize += updateSize;
+            if (downloadState.type !== "downloaded") jvmToDownload = targetJvm;
+            else downloadedSize += updateSize;
+        })(),
+        // All libraries download
         ...data.libraries.map(library =>
             (async () => {
                 if (library.rules && !resolveVersionDataRules(library.rules))
                     return;
+                // TODO: Add natives download
                 if (library.downloads.artifact) {
                     totalSize += library.downloads.artifact.size;
                     const p = path.join(
@@ -124,19 +144,19 @@ async function getVersionDownloadState(id: string): Promise<
                         (await getFileSHA1(p)) ===
                             library.downloads.artifact.sha1
                     )
-                        progress += library.downloads.artifact.size;
+                        downloadedSize += library.downloads.artifact.size;
                     else files.push([p, library.downloads.artifact.url]);
                 }
             })()
         ),
     ]);
 
-    return { progress, totalSize, files };
+    return { downloadedSize, totalSize, files, jvmToDownload };
 }
 
 async function downloadVersion(
     id: string,
-    onProgress?: (progress: number, total: number) => void
+    onProgress?: (downloaded: number, total: number) => void
 ): Promise<boolean> {
     const downloadState = await getVersionDownloadState(id);
     if (!_.isObject(downloadState)) return false;
@@ -144,19 +164,32 @@ async function downloadVersion(
     downloadsLock.add(id);
 
     try {
-        await Promise.all(
-            downloadState.files.map(([path, url]) =>
+        await Promise.all([
+            // Files downloads
+            ...downloadState.files.map(([path, url]) =>
                 (async () => {
                     await downloadFile(url, path, a => {
-                        downloadState.progress += a;
+                        downloadState.downloadedSize += a;
                         onProgress?.(
-                            downloadState.progress,
+                            downloadState.downloadedSize,
                             downloadState.totalSize
                         );
                     });
                 })()
-            )
-        );
+            ),
+            // Jvm download
+            (async () => {
+                const jvmVersion = downloadState.jvmToDownload;
+                if (_.isUndefined(jvmVersion)) return;
+                JVMVersionManager.startJVMDownload(jvmVersion, (bytes, _) => {
+                    downloadState.downloadedSize += bytes;
+                    onProgress?.(
+                        downloadState.downloadedSize,
+                        downloadState.totalSize
+                    );
+                });
+            })(),
+        ]);
         return true;
     } catch (error) {
         console.error(error);
@@ -175,7 +208,8 @@ async function getVersion(id: string): Promise<McVersion | null> {
     const downloadState = await getVersionDownloadState(id);
     let downloadProgress = 0;
     if (_.isObject(downloadState))
-        downloadProgress = downloadState.progress / downloadState.totalSize;
+        downloadProgress =
+            downloadState.downloadedSize / downloadState.totalSize;
     else if (downloadState === "full") downloadProgress = 1;
     return {
         id,

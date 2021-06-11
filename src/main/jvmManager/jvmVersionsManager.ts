@@ -1,4 +1,7 @@
-import type { DownloadState, JVMVersion } from "../../common/jvmVersionManager";
+import type {
+    JVMDownloadState,
+    JVMVersion,
+} from "../../common/jvmVersionManager";
 import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
@@ -16,7 +19,7 @@ const tempFolder = path.resolve(
         .map(_ => Math.floor(Math.random() * 10).toString())
         .join("")
 );
-const downloadStates = new Map<JVMVersion, DownloadState>();
+const downloadStates = new Map<JVMVersion, JVMDownloadState>();
 
 export async function init() {
     fs.mkdirSync(tempFolder, {
@@ -37,32 +40,36 @@ export async function init() {
 
 export function getJreVersionLink(
     v: JVMVersion
-): { link: string; date: Date } | null {
+): { link: string; size: number; sha1: string; date: Date } | null {
     const k = v + "_" + process.platform + "_" + os.arch();
     if (!(k in jreVersionLinks)) return null;
-    const { link, date } = jreVersionLinks[k as keyof typeof jreVersionLinks];
+    const { link, size, sha1, date } =
+        jreVersionLinks[k as keyof typeof jreVersionLinks];
     return {
         link,
+        size,
+        sha1,
         date: new Date(date),
     };
 }
 
-export function getJVMDownloadState(v: JVMVersion): DownloadState {
+export function getJVMDownloadState(v: JVMVersion): JVMDownloadState {
     const version = getJreVersionLink(v);
     const state = downloadStates.get(v);
-    if (state === undefined) return { type: "absent" };
+    if (state === undefined)
+        return { type: "absent", totalSize: version?.size ?? 0 };
     else if (
         state.type === "downloaded" &&
         version !== null &&
         state.updateDate <= version.date
     )
-        return { type: "outdated" };
+        return { type: "outdated", updateSize: version.size };
     else return state;
 }
 
 export async function startJVMDownload(
     v: JVMVersion,
-    onProgress?: (state: DownloadState) => void
+    onProgress?: (bytes: number, state: JVMDownloadState) => void
 ): Promise<boolean> {
     const currentDownloadState = getJVMDownloadState(v);
     const update = getJreVersionLink(v);
@@ -92,26 +99,23 @@ export async function startJVMDownload(
         );
         const writeStream = fs.createWriteStream(tempFile);
         response.body.pipe(writeStream);
-        let downloadState: DownloadState = {
+        let downloadState: JVMDownloadState = {
             type: "downloading",
-            progress: 0,
+            downloadedSize: 0,
+            totalSize: update.size,
         };
         downloadStates.set(v, downloadState);
 
-        let totalReceived = 0;
+        let lastChunkSize = 0;
         response.body.on("data", (chunk: Buffer) => {
-            if (
-                downloadState.type !== "downloading" ||
-                downloadState.progress === 1
-            )
-                return;
-            totalReceived += chunk.length;
-            downloadState.progress = totalReceived / contentLength;
-            onProgress?.(downloadState);
+            if (downloadState.type !== "downloading") return;
+
+            lastChunkSize = chunk.length;
+            downloadState.downloadedSize += chunk.length;
+            if (downloadState.downloadedSize !== downloadState.totalSize)
+                onProgress?.(chunk.length, downloadState);
         });
         response.body.on("end", async () => {
-            if (downloadState.type === "downloading")
-                downloadState.progress = 1;
             writeStream.close();
 
             await extract(tempFile, {
@@ -120,10 +124,11 @@ export async function startJVMDownload(
 
             downloadState = {
                 type: "downloaded",
+                totalSize: update.size,
                 updateDate: update.date,
             };
             downloadStates.set(v, downloadState);
-            onProgress?.(downloadState);
+            onProgress?.(lastChunkSize, downloadState);
         });
     });
 
