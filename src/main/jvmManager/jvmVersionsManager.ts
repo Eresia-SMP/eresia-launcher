@@ -29,7 +29,9 @@ export async function init() {
     });
     ipcMain.handle("startJVMDownload", (e, v: JVMVersion) => {
         if (v !== 8 && v !== 11) throw "Invalid argument";
-        return startJVMDownload(v, e.sender);
+        return startJVMDownload(v, p =>
+            e.sender.send("jvmVersionDownloadProgress", v, p)
+        );
     });
 }
 
@@ -60,7 +62,7 @@ export function getJVMDownloadState(v: JVMVersion): DownloadState {
 
 export async function startJVMDownload(
     v: JVMVersion,
-    sender?: Electron.WebContents
+    onProgress?: (state: DownloadState) => void
 ): Promise<boolean> {
     const currentDownloadState = getJVMDownloadState(v);
     const update = getJreVersionLink(v);
@@ -105,7 +107,7 @@ export async function startJVMDownload(
                 return;
             totalReceived += chunk.length;
             downloadState.progress = totalReceived / contentLength;
-            sender?.send("jvmVersionDownloadProgress", v, downloadState);
+            onProgress?.(downloadState);
         });
         response.body.on("end", async () => {
             if (downloadState.type === "downloading")
@@ -121,7 +123,7 @@ export async function startJVMDownload(
                 updateDate: update.date,
             };
             downloadStates.set(v, downloadState);
-            sender?.send("jvmVersionDownloadProgress", v, downloadState);
+            onProgress?.(downloadState);
         });
     });
 

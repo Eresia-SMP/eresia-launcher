@@ -29,9 +29,11 @@ export async function init() {
         if (!_.isString(id)) throw "Invalid argument";
         return getVersion(id);
     });
-    ipcMain.handle("downloadMcVersion", (a, id: string) => {
+    ipcMain.handle("downloadMcVersion", (e, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
-        return downloadVersion(id, a.sender);
+        return downloadVersion(id, (a, b) =>
+            e.sender.send("mcVersionDownloadProgress", id, a, b)
+        );
     });
 
     await reloadEresiaVersions();
@@ -134,7 +136,7 @@ async function getVersionDownloadState(id: string): Promise<
 
 async function downloadVersion(
     id: string,
-    sender?: Electron.WebContents
+    onProgress?: (progress: number, total: number) => void
 ): Promise<boolean> {
     const downloadState = await getVersionDownloadState(id);
     if (!_.isObject(downloadState)) return false;
@@ -147,13 +149,10 @@ async function downloadVersion(
                 (async () => {
                     await downloadFile(url, path, a => {
                         downloadState.progress += a;
-                        sender &&
-                            sender.send(
-                                "mcVersionDownloadProgress",
-                                id,
-                                downloadState.progress,
-                                downloadState.totalSize
-                            );
+                        onProgress?.(
+                            downloadState.progress,
+                            downloadState.totalSize
+                        );
                     });
                 })()
             )
