@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 import * as _ from "lodash";
 import * as sha1File from "sha1-file";
 import * as isDev from "electron-is-dev";
-import * as VersionManager from "./minecraftLauncher/versionManager";
+import * as VersionManager from "./versionManager/versionManager";
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
