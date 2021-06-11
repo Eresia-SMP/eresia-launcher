@@ -1,34 +1,50 @@
 {
     "8_win32_x86": {
         "link": "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u292-b10/OpenJDK8U-jre_x86-32_windows_hotspot_8u292b10.zip",
+        "size": 37439910,
+        "sha1": "145c1e89f318017d80ec0d04a79957e98e7b4d7a",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "8_win32_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u292-b10/OpenJDK8U-jre_x64_windows_hotspot_8u292b10.zip",
+        "size": 38992972,
+        "sha1": "a894aa86fa275122b56698819bea4adc05e46d70",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "8_darwin_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u292-b10/OpenJDK8U-jre_x64_mac_hotspot_8u292b10.tar.gz",
+        "size": 40745019,
+        "sha1": "9899578cab83a29688e42eb1652f73cc3d1647c0",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "8_linux_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u292-b10/OpenJDK8U-jre_x64_linux_hotspot_8u292b10.tar.gz",
+        "size": 41355668,
+        "sha1": "55848001c21214d30ca1362bace8613ce9733516",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "11_win32_x86": {
         "link": "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jre_x86-32_windows_hotspot_11.0.11_9.zip",
+        "size": 37329105,
+        "sha1": "381a9a7f0fd7f9e24201959c3d045d881ffe2112",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "11_win32_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jre_x64_windows_hotspot_11.0.11_9.zip",
+        "size": 42522345,
+        "sha1": "9e552fa27661e9958bd5e47ecbdce946b4d0c43f",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "11_darwin_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jre_x64_mac_hotspot_11.0.11_9.tar.gz",
+        "size": 38523420,
+        "sha1": "5e757772b5e5828a885673a793fef4c8fa8a177a",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     },
     "11_linux_x64": {
         "link": "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.11%2B9/OpenJDK11U-jre_x64_linux_hotspot_11.0.11_9.tar.gz",
+        "size": 42432277,
+        "sha1": "f72393dffa0208489dfde1f3a8a3a34940636056",
         "date": "Wed Jun 02 2021 17:04:29 GMT+0200 (Central European Summer Time)"
     }
 }
