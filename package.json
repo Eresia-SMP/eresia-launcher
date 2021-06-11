@@ -7,7 +7,7 @@
         "build": "gulp && vite build",
         "watch:renderer": "vite",
         "watch:main": "concurrently \"gulp watch\" \"nodemon --watch dist/main --exec \\\"electron .\\\"\"",
-        "dev": "yarn build && concurrently \"yarn watch:renderer\" \"yarn watch:main\""
+        "dev": "gulp && concurrently \"yarn watch:renderer\" \"yarn watch:main\""
     },
     "dependencies": {
         "electron": "^13.1.2",
