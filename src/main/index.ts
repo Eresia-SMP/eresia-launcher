@@ -6,6 +6,7 @@ import * as _ from "lodash";
 import * as sha1File from "sha1-file";
 import * as isDev from "electron-is-dev";
 import * as VersionManager from "./versionManager/versionManager";
+import * as JvmManager from "./jvmManager/jvmVersionsManager";
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
@@ -13,6 +14,7 @@ let window: BrowserWindow | null = null;
 app.on("ready", async () => {
     mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
 
+    await JvmManager.init();
     await VersionManager.init();
 
     createWindow();

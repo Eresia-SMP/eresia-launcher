@@ -1,14 +1,12 @@
-import type { MinecraftVersion } from "../../common/minecraftVersionManager";
+import type { McVersion } from "../../common/mcVersionManager";
 import { ipcMain } from "electron";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as process from "process";
-import fetch from "node-fetch";
 import * as _ from "lodash";
 import { LinkToJson, VersionData, VersionDataRule } from "./types";
 import * as config from "./config.json";
-import * as sha1File from "sha1-file";
 import {
     mainFolderPath,
     downloadFile,
@@ -26,12 +24,12 @@ export async function init() {
         recursive: true,
     });
 
-    ipcMain.handle("getAllMinecraftVersions", async () => getAllVersion());
-    ipcMain.handle("getMinecraftVersion", (a, id: string) => {
+    ipcMain.handle("getAllMcVersions", async () => getAllVersion());
+    ipcMain.handle("getMcVersion", (a, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
         return getVersion(id);
     });
-    ipcMain.handle("downloadMinecraftVersion", (a, id: string) => {
+    ipcMain.handle("downloadMcVersion", (a, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
         return downloadVersion(id, a.sender);
     });
@@ -151,7 +149,7 @@ async function downloadVersion(
                         downloadState.progress += a;
                         sender &&
                             sender.send(
-                                "McVersionDownloadProgress",
+                                "mcVersionDownloadProgress",
                                 id,
                                 downloadState.progress,
                                 downloadState.totalSize
@@ -172,7 +170,7 @@ async function downloadVersion(
 export function getAllVersion(): string[] {
     return Array.from(versionsDataUrls.keys());
 }
-async function getVersion(id: string): Promise<MinecraftVersion | null> {
+async function getVersion(id: string): Promise<McVersion | null> {
     const data = await getVersionData(id);
     if (!_.isObject(data)) return null;
     const downloadState = await getVersionDownloadState(id);
