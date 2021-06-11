@@ -2,13 +2,20 @@ import type { McVersionManagerApi } from "../common/minecraftVersionManager";
 import { contextBridge, ipcRenderer } from "electron";
 import * as _ from "lodash";
 
+let callbacksMap = new Map();
+
 const mcVersionApi: McVersionManagerApi = {
-    getAllVersions() {
-        return ipcRenderer.invoke("getAllMinecraftVersions");
+    getAllVersions: _.partial(ipcRenderer.invoke, "getAllMinecraftVersions"),
+    getVersion: _.partial(ipcRenderer.invoke, "getMinecraftVersion"),
+    downloadVersion: _.partial(ipcRenderer.invoke, "downloadMinecraftVersion"),
+
+    on(event: string, callback: CallableFunction) {
+        const c = (_: any, ...a: any) => callback(...a);
+        callbacksMap.set(callback, c);
+        ipcRenderer.on(event, c);
     },
-    getVersion(id: string) {
-        if (!_.isString(id)) throw "Invalid argument";
-        return ipcRenderer.invoke("getMinecraftVersion", id);
+    off(event: string, callback: CallableFunction) {
+        ipcRenderer.off(event, callbacksMap.get(callback));
     },
 };
 

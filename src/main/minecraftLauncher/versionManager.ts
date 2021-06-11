@@ -19,6 +19,7 @@ import {
 
 let versions: Map<string, VersionData> = new Map();
 let versionsDataUrls: Map<string, LinkToJson<VersionData>> = new Map();
+let downloadsLock: Set<string> = new Set();
 
 export async function init() {
     fs.mkdirSync(mainFolderPath, {
@@ -29,6 +30,10 @@ export async function init() {
     ipcMain.handle("getMinecraftVersion", (a, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
         return getVersion(id);
+    });
+    ipcMain.handle("downloadMinecraftVersion", (a, id: string) => {
+        if (!_.isString(id)) throw "Invalid argument";
+        return downloadVersion(id, a.sender);
     });
 
     await reloadEresiaVersions();
@@ -127,6 +132,41 @@ async function getVersionDownloadState(id: string): Promise<
     ]);
 
     return { progress, totalSize, files };
+}
+
+async function downloadVersion(
+    id: string,
+    sender?: Electron.WebContents
+): Promise<boolean> {
+    const downloadState = await getVersionDownloadState(id);
+    if (!_.isObject(downloadState)) return false;
+    if (downloadsLock.has(id)) return false;
+    downloadsLock.add(id);
+
+    try {
+        await Promise.all(
+            downloadState.files.map(([path, url]) =>
+                (async () => {
+                    await downloadFile(url, path, a => {
+                        downloadState.progress += a;
+                        sender &&
+                            sender.send(
+                                "McVersionDownloadProgress",
+                                id,
+                                downloadState.progress,
+                                downloadState.totalSize
+                            );
+                    });
+                })()
+            )
+        );
+        return true;
+    } catch (error) {
+        console.error(error);
+        return false;
+    } finally {
+        downloadsLock.delete(id);
+    }
 }
 
 export function getAllVersion(): string[] {

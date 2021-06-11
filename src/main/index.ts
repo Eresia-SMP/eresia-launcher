@@ -52,14 +52,19 @@ function createWindow() {
  * UTILS
  */
 
-export async function downloadFile(url: string, ...p: string[]): Promise<void> {
-    const fullPath = path.resolve(mainFolderPath, ...p);
+export async function downloadFile(
+    url: string,
+    p: string,
+    onProgress?: (bytes: number) => void
+): Promise<void> {
+    const fullPath = path.resolve(mainFolderPath, p);
     await fs.promises.mkdir(path.parse(fullPath).dir, {
         recursive: true,
     });
     const response = await fetch(url);
     if (!response.ok) throw new Error(response.statusText);
     response.body.pipe(fs.createWriteStream(fullPath));
+    response.body.on("data", b => onProgress?.(b.length));
     await new Promise<void>(resolve =>
         response.body.once("end", () => resolve())
     );
