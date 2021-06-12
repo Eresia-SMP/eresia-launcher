@@ -48,7 +48,7 @@ export async function init() {
 
 async function reloadEresiaVersions() {
     await downloadFile(
-        config.eresia_versions_url,
+        config.eresiaVersionsUrl,
         "versions/eresia_versions.json"
     );
     const urls: { [key: string]: LinkToJson<VersionData> } = JSON.parse(
