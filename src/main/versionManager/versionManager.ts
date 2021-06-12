@@ -6,7 +6,12 @@ import * as os from "os";
 import * as path from "path";
 import * as process from "process";
 import * as _ from "lodash";
-import { LinkToJson, VersionData, VersionDataRule } from "./types";
+import {
+    LinkToJson,
+    VersionData,
+    VersionDataRule,
+    VersionAssetIndexes,
+} from "./types";
 import * as config from "./config.json";
 import {
     mainFolderPath,
@@ -149,6 +154,30 @@ async function getVersionDownloadState(id: string): Promise<
                 }
             })()
         ),
+        // Assets Index
+        (async () => {
+            const indexesFilePath = `assets/indexes/${data.assets}.json`;
+            if (
+                !(await fileExists(indexesFilePath)) ||
+                (await getFileSHA1(indexesFilePath)) !== data.assetIndex.sha1
+            )
+                await downloadFile(data.assetIndex.url, indexesFilePath);
+            let indexes: VersionAssetIndexes = JSON.parse(
+                await readFileToString(indexesFilePath)
+            );
+            for (const object of Object.values(indexes.objects)) {
+                totalSize += object.size;
+                const hash = object.hash;
+                const hashStart = hash.substr(0, 2);
+                const p = `assets/objects/${hashStart}/${hash}`;
+                if (await fileExists(p)) downloadedSize += object.size;
+                else
+                    files.push([
+                        p,
+                        `https://resources.download.minecraft.net/${hashStart}/${hash}`,
+                    ]);
+            }
+        })(),
     ]);
 
     return { downloadedSize, totalSize, files, jvmToDownload };
@@ -164,35 +193,43 @@ async function downloadVersion(
     downloadsLock.add(id);
 
     try {
-        await Promise.all([
-            // Files downloads
-            ...downloadState.files.map(([path, url]) =>
-                (async () => {
-                    await downloadFile(url, path, a => {
-                        downloadState.downloadedSize += a;
-                        onProgress?.(
-                            downloadState.downloadedSize,
-                            downloadState.totalSize
-                        );
-                    });
-                })()
-            ),
-            // Jvm download
-            (async () => {
-                const jvmVersion = downloadState.jvmToDownload;
-                if (_.isUndefined(jvmVersion)) return;
-                await JVMVersionManager.downloadJVMVersion(
-                    jvmVersion,
-                    (bytes, _) => {
-                        downloadState.downloadedSize += bytes;
-                        onProgress?.(
-                            downloadState.downloadedSize,
-                            downloadState.totalSize
-                        );
-                    }
-                );
-            })(),
-        ]);
+        // Download files, 10 at a times
+        let filesToDownload = [...downloadState.files];
+        while (filesToDownload.length > 0) {
+            await Promise.all(
+                filesToDownload
+                    .splice(
+                        0,
+                        Math.min(
+                            filesToDownload.length,
+                            config.assetDownloadConcurrency
+                        )
+                    )
+                    .map(([path, url]) =>
+                        (async () => {
+                            await downloadFile(url, path, a => {
+                                downloadState.downloadedSize += a;
+                                onProgress?.(
+                                    downloadState.downloadedSize,
+                                    downloadState.totalSize
+                                );
+                            });
+                        })()
+                    )
+            );
+        }
+        // Download jvm
+        if (!_.isUndefined(downloadState.jvmToDownload))
+            await JVMVersionManager.downloadJVMVersion(
+                downloadState.jvmToDownload,
+                (bytes, _) => {
+                    downloadState.downloadedSize += bytes;
+                    onProgress?.(
+                        downloadState.downloadedSize,
+                        downloadState.totalSize
+                    );
+                }
+            );
         return true;
     } catch (error) {
         console.error(error);

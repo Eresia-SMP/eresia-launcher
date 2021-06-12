@@ -1,5 +1,7 @@
 {
     "eresia_versions_url": "https://storage.googleapis.com/eresia_launcher_files/versions.json",
     "vanilla_versions_url": "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json",
-    "eresia_profiles_url": "https://storage.googleapis.com/eresia_launcher_files/profiles.json"
+    "eresia_profiles_url": "https://storage.googleapis.com/eresia_launcher_files/profiles.json",
+
+    "assetDownloadConcurrency": 15
 }
