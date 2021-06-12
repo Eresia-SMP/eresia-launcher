@@ -113,10 +113,39 @@ export async function downloadJVMVersion(
     response.body.on("end", async () => {
         writeStream.close();
 
-        console.log(tempFile);
-        await extract(tempFile, {
-            dir: path.resolve(mainFolderPath, "jvm", v.toString()),
+        const extractFolder = path.resolve(
+            tempFolder,
+            Array(50)
+                .fill("")
+                .map(_ => Math.floor(Math.random() * 10).toString())
+                .join("")
+        );
+        const targetFolder = path.resolve(mainFolderPath, "jvm", v.toString());
+        await fs.promises.rm(targetFolder, {
+            recursive: true,
+            force: true,
         });
+        await fs.promises.mkdir(path.resolve(mainFolderPath, "jvm"), {
+            recursive: true,
+        });
+
+        await fs.promises.mkdir(extractFolder, { recursive: true });
+        await extract(tempFile, {
+            dir: extractFolder,
+        });
+        if (fs.existsSync(path.resolve(extractFolder, "bin"))) {
+            await fs.promises.rename(extractFolder, targetFolder);
+        } else {
+            await fs.promises.rename(
+                path.join(
+                    extractFolder,
+                    (
+                        await fs.promises.readdir(extractFolder)
+                    )[0]
+                ),
+                targetFolder
+            );
+        }
 
         downloadState = {
             type: "downloaded",
