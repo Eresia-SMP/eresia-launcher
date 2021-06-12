@@ -61,7 +61,7 @@ export function getJVMDownloadState(v: JVMVersion): JVMDownloadState {
     else if (
         state.type === "downloaded" &&
         version !== null &&
-        state.updateDate <= version.date
+        state.updateDate < version.date
     )
         return { type: "outdated", updateSize: version.size };
     else return state;
