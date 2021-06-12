@@ -10,7 +10,12 @@ import * as process from "process";
 import fetch from "node-fetch";
 import * as extract from "extract-zip";
 import * as jreVersionLinks from "./jreVersionLinks.json";
-import { mainFolderPath } from "../index";
+import {
+    fileExists,
+    mainFolderPath,
+    readFileToString,
+    writeFile,
+} from "../index";
 
 const tempFolder = path.resolve(
     os.tmpdir(),
@@ -53,12 +58,31 @@ export function getJreVersionLink(
     };
 }
 
-export function getJVMDownloadState(v: JVMVersion): JVMDownloadState {
+interface JVMSavedDownloadState {
+    updateDate: string;
+    totalSize: number;
+}
+export async function getJVMDownloadState(
+    v: JVMVersion
+): Promise<Readonly<JVMDownloadState>> {
     const version = getJreVersionLink(v);
     const state = downloadStates.get(v);
-    if (state === undefined)
-        return { type: "absent", totalSize: version?.size ?? 0 };
-    else if (
+    if (state === undefined) {
+        if (await fileExists("jvm", v.toString(), "version.json")) {
+            const savedState = JSON.parse(
+                await readFileToString(["jvm", v.toString(), "version.json"])
+            ) as JVMSavedDownloadState;
+            const state: JVMDownloadState = {
+                type: "downloaded",
+                updateDate: new Date(savedState.updateDate),
+                totalSize: savedState.totalSize,
+            };
+            downloadStates.set(v, state);
+            return state;
+        } else {
+            return { type: "absent", totalSize: version?.size ?? 0 };
+        }
+    } else if (
         state.type === "downloaded" &&
         version !== null &&
         state.updateDate < version.date
@@ -66,12 +90,21 @@ export function getJVMDownloadState(v: JVMVersion): JVMDownloadState {
         return { type: "outdated", updateSize: version.size };
     else return state;
 }
+async function setJVMSavedDownloadState(
+    v: JVMVersion,
+    state: JVMSavedDownloadState
+) {
+    writeFile(
+        ["jvm", v.toString(), "version.json"],
+        JSON.stringify(state, null, 2)
+    );
+}
 
 export async function downloadJVMVersion(
     v: JVMVersion,
     onProgress?: (bytes: number, state: JVMDownloadState) => void
 ): Promise<boolean> {
-    const currentDownloadState = getJVMDownloadState(v);
+    const currentDownloadState = await getJVMDownloadState(v);
     const update = getJreVersionLink(v);
     if (
         !(
@@ -153,6 +186,10 @@ export async function downloadJVMVersion(
             updateDate: update.date,
         };
         downloadStates.set(v, downloadState);
+        await setJVMSavedDownloadState(v, {
+            totalSize: update.size,
+            updateDate: update.date.toUTCString(),
+        });
         onProgress?.(lastChunkSize, downloadState);
     });
 

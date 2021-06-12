@@ -122,8 +122,9 @@ async function getVersionDownloadState(id: string): Promise<
         (async () => {
             let targetJvm = data.javaVersion?.majorVersion as JVMVersion;
             if (targetJvm !== 8 && targetJvm !== 11) targetJvm = 11;
-            const downloadState =
-                JVMVersionManager.getJVMDownloadState(targetJvm);
+            const downloadState = await JVMVersionManager.getJVMDownloadState(
+                targetJvm
+            );
             let updateSize;
             if (downloadState.type === "outdated")
                 updateSize = downloadState.updateSize;

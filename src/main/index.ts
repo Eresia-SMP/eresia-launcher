@@ -71,6 +71,15 @@ export async function downloadFile(
         response.body.once("end", () => resolve())
     );
 }
+export async function writeFile(
+    p: string | string[],
+    data: string | Uint8Array
+): Promise<void> {
+    await fs.promises.writeFile(
+        path.resolve(mainFolderPath, ..._.castArray(p)),
+        data
+    );
+}
 export async function readFileToString(
     p: string | string[],
     encoding?: BufferEncoding
