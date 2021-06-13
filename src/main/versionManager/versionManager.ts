@@ -243,7 +243,7 @@ export async function downloadVersion(
 export function getAllVersion(): string[] {
     return Array.from(versionsDataUrls.keys());
 }
-async function getVersion(id: string): Promise<McVersion | null> {
+export async function getVersion(id: string): Promise<McVersion | null> {
     const data = await getVersionData(id);
     if (!_.isObject(data)) return null;
     const downloadState = await getVersionDownloadState(id);
