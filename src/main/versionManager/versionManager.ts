@@ -184,7 +184,7 @@ async function getVersionDownloadState(id: string): Promise<
     return { downloadedSize, totalSize, files, jvmToDownload };
 }
 
-async function downloadVersion(
+export async function downloadVersion(
     id: string,
     onProgress?: (downloaded: number, total: number) => void
 ): Promise<boolean> {
