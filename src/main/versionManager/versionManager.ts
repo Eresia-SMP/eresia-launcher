@@ -88,7 +88,7 @@ async function getVersionData(
     return data;
 }
 
-async function getVersionDownloadState(id: string): Promise<
+export async function getVersionDownloadState(id: string): Promise<
     | "full"
     | {
           totalSize: number;
