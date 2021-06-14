@@ -88,16 +88,12 @@ async function getVersionData(
     return data;
 }
 
-export async function getVersionDownloadState(id: string): Promise<
-    | "full"
-    | {
-          totalSize: number;
-          downloadedSize: number;
-          files: [path: string, url: string][];
-          jvmToDownload?: JVMVersion;
-      }
-    | null
-> {
+export async function getVersionDownloadState(id: string): Promise<{
+    totalSize: number;
+    downloadedSize: number;
+    files: [path: string, url: string][];
+    jvmToDownload?: JVMVersion;
+} | null> {
     const data = await getVersionData(id, true);
     if (!_.isObject(data)) return null;
     let totalSize = 0;
