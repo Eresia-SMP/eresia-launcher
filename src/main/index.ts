@@ -5,8 +5,9 @@ import fetch from "node-fetch";
 import * as _ from "lodash";
 import * as sha1File from "sha1-file";
 import * as isDev from "electron-is-dev";
-import * as VersionManager from "./versionManager/versionManager";
 import * as JvmManager from "./jvmManager/jvmVersionsManager";
+import * as VersionManager from "./versionManager/versionManager";
+import * as ProfileManager from "./profileManager/profileManager";
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
@@ -16,6 +17,7 @@ app.on("ready", async () => {
 
     await JvmManager.init();
     await VersionManager.init();
+    await ProfileManager.init();
 
     createWindow();
 });

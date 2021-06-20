@@ -38,7 +38,7 @@ export async function init() {
     });
     ipcMain.handle("downloadMcVersion", (e, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
-        return downloadVersion(id, (a, b) =>
+        return downloadVersion(id, (_, a, b) =>
             e.sender.send("mcVersionDownloadProgress", id, a, b)
         );
     });
@@ -182,7 +182,11 @@ export async function getVersionDownloadState(id: string): Promise<{
 
 export async function downloadVersion(
     id: string,
-    onProgress?: (downloaded: number, total: number) => void
+    onProgress?: (
+        bytes: number,
+        totalSize: number,
+        progressSize: number
+    ) => void
 ): Promise<boolean> {
     const downloadState = await getVersionDownloadState(id);
     if (!_.isObject(downloadState)) return false;
@@ -207,8 +211,9 @@ export async function downloadVersion(
                             await downloadFile(url, path, a => {
                                 downloadState.downloadedSize += a;
                                 onProgress?.(
-                                    downloadState.downloadedSize,
-                                    downloadState.totalSize
+                                    a,
+                                    downloadState.totalSize,
+                                    downloadState.downloadedSize
                                 );
                             });
                         })()
@@ -222,8 +227,9 @@ export async function downloadVersion(
                 (bytes, _) => {
                     downloadState.downloadedSize += bytes;
                     onProgress?.(
-                        downloadState.downloadedSize,
-                        downloadState.totalSize
+                        bytes,
+                        downloadState.totalSize,
+                        downloadState.downloadedSize
                     );
                 }
             );
