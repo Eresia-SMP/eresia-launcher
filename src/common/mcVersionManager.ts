@@ -6,7 +6,7 @@ export type McVersion = {
 };
 
 export interface McVersionManagerApi {
-    getAllVersions(): Promise<string[]>;
+    getAllVersions(): Promise<McVersion[]>;
     getVersion(id: string): Promise<McVersion | null>;
     downloadVersion(id: string): Promise<boolean>;
 }

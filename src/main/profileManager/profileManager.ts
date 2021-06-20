@@ -13,7 +13,9 @@ let profiles_download_lock: Set<string> = new Set();
 export async function init() {
     await reloadProfiles();
 
-    ipcMain.handle("getAllMcProfiles", async () => getAllProfiles());
+    ipcMain.handle("getAllMcProfiles", async () =>
+        Promise.all(getAllProfiles().map(getProfile))
+    );
     ipcMain.handle("getMcProfile", (a, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
         return getProfile(id);
@@ -44,19 +46,27 @@ export function getAllProfiles(): string[] {
 export async function getProfile(id: string): Promise<McProfile | null> {
     const data = profiles_data.get(id);
     if (!data) return null;
-    const versionDownloadState = await VersionManager.getVersionDownloadState(
-        data.version
-    );
-    if (versionDownloadState === null) {
-        console.error(
-            `Could not find download state of version {${data.version}} of profile [${data.id}]`
-        );
-        return null;
+    let dls: "downloaded" | "downloading" | "absent";
+    if (profiles_download_lock.has(id)) dls = "downloading";
+    else {
+        const versionDownloadState =
+            await VersionManager.getVersionDownloadState(data.version);
+        if (versionDownloadState === null) {
+            console.error(
+                `Could not find download state of version {${data.version}} of profile [${data.id}]`
+            );
+            return null;
+        }
+        dls =
+            versionDownloadState.downloadedSize ==
+            versionDownloadState.totalSize
+                ? "downloaded"
+                : "absent";
     }
 
     return {
         ...data,
-        downloadState: "downloaded",
+        downloadState: dls,
     };
 }
 
