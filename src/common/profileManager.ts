@@ -6,7 +6,7 @@ export interface McProfile {
 }
 
 export interface McProfileManagerApi {
-    getAllProfiles(): Promise<string>;
+    getAllProfiles(): Promise<string[]>;
     getProfile(id: string): Promise<McProfile | null>;
     downloadProfile(id: string): Promise<boolean>;
 }
