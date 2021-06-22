@@ -111,6 +111,13 @@ export async function resolveVersionLibraries(id: string): Promise<
 > {
     const data = await getVersionData(id);
     if (!_.isObject(data)) return null;
+    let platF: "osx" | "windows" | "linux" | null = null;
+    if (os.platform() === "win32")
+        platF = "windows";
+    else if (os.platform() === "linux")
+        platF = "linux";
+    else if (os.platform() === "darwin")
+        platF = "osx";
 
     return data.libraries
         .filter(l => !(l.rules && !resolveVersionDataRules(l.rules)))
@@ -125,6 +132,14 @@ export async function resolveVersionLibraries(id: string): Promise<
                 const p = path.join("libraries", l.downloads.artifact.path);
                 artifacts.push({
                     ...l.downloads.artifact,
+                    path: p,
+                });
+            }
+            if (l.natives && l.downloads.classifiers && platF && l.natives[platF]) {
+                const a = l.downloads.classifiers[l.natives[platF] as any];
+                const p = path.join("libraries", a.path);
+                artifacts.push({
+                    ...a,
                     path: p,
                 });
             }
@@ -311,7 +326,7 @@ export async function getVersion(id: string): Promise<McVersion | null> {
  * UTILS
  */
 
-function resolveVersionDataRules(
+export function resolveVersionDataRules(
     rules: VersionDataRule[]
 ): "allow" | "disallow" {
     let result: "allow" | "disallow" = "disallow";

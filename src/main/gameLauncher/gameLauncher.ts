@@ -36,7 +36,9 @@ export async function startProfile(
     id: string,
     options: GameStartOptions
 ): Promise<boolean> {
-    const profileData = await ProfileManager.getProfileData(id);
+    console.log(`Launching profile ${id} with option`, options);
+
+    const profileData = ProfileManager.getProfileData(id);
     if (!profileData) return false;
     const profileDownloadState = await ProfileManager.getProfileDownloadState(
         id
@@ -91,26 +93,25 @@ export async function startProfile(
         version_type: versionData.type,
         game_directory: path.resolve(mainFolderPath, "profiles", id),
         assets_root: path.resolve(mainFolderPath, "assets"),
-        natives_directory: path.resolve(
-            mainFolderPath,
-            "versions",
-            versionData.id,
-            "natives"
-        ),
+        natives_directory: "C:/Users/Malo/AppData/Roaming/.minecraft/bin/ba8d-797a-71d8-509b",
         assets_index_name: versionData.assets,
         launcher_name: config.launcherName,
         launcher_version: config.launcherVersion,
         classpath: classpath,
     };
     for (let arg of versionData.arguments.jvm) {
+        let newArgs: string[] = [];
         if (_.isString(arg)) {
-            let newArg = arg;
-            for (const [k, v] of Object.entries(argReplaceTable)) {
-                newArg = newArg.replace("${" + k + "}", v);
-            }
-            args.push(newArg);
-        } else {
+            newArgs = [arg];
+        } else if (VersionManager.resolveVersionDataRules(arg.rules) === "allow") {
+            newArgs = _.castArray(arg.value);
         }
+        args.push(...newArgs.map(a => {
+            for (const [k, v] of Object.entries(argReplaceTable)) {
+                a = a.replace("${" + k + "}", v);
+            }
+            return a;
+        }));
     }
 
     args.push(versionData.mainClass);
@@ -126,8 +127,11 @@ export async function startProfile(
         }
     }
 
+    console.log(args.join(" "));
+
     currentStartedGame = spawn(jvmExecutablePath, args, {
         cwd: path.resolve(mainFolderPath),
+        detached: true,
     });
 
     currentStartedGame.on("error", e => console.error(e));
