@@ -76,7 +76,7 @@ export async function startProfile(
         else separator = ":";
         classpath = [
             ...libraries.map(l => path.join(mainFolderPath, l.path)),
-            path.join(mainFolderPath, "versions", id, `${id}.jar`),
+            path.join(mainFolderPath, "versions", versionData.id, `${versionData.id}.jar`),
         ].join(separator);
     }
 
@@ -87,15 +87,17 @@ export async function startProfile(
         user_type: "mojang",
         width: (options.customResolution?.width || 0).toString(),
         height: (options.customResolution?.height || 0).toString(),
-        version_name: id,
+        version_name: versionData.id,
         version_type: versionData.type,
-        game_directory: path.resolve(mainFolderPath, "versions", id),
+        game_directory: path.resolve(mainFolderPath, "profiles", id),
+        assets_root: path.resolve(mainFolderPath, "assets"),
         natives_directory: path.resolve(
             mainFolderPath,
             "versions",
-            id,
+            versionData.id,
             "natives"
         ),
+        assets_index_name: versionData.assets,
         launcher_name: config.launcherName,
         launcher_version: config.launcherVersion,
         classpath: classpath,
@@ -110,7 +112,9 @@ export async function startProfile(
         } else {
         }
     }
+
     args.push(versionData.mainClass);
+    
     for (let arg of versionData.arguments.game) {
         if (_.isString(arg)) {
             let newArg = arg;
@@ -122,6 +126,13 @@ export async function startProfile(
         }
     }
 
-    currentStartedGame = spawn(jvmExecutablePath, args);
+    currentStartedGame = spawn(jvmExecutablePath, args, {
+        cwd: path.resolve(mainFolderPath),
+    });
+
+    currentStartedGame.on("error", e => console.error(e));
+    currentStartedGame.stderr.on("data", c => console.error("Game error output:",c.toString()));
+    currentStartedGame.stdout.on("data", c => console.log("Game output:", c.toString()));
+
     return false;
 }
