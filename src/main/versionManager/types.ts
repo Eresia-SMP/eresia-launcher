@@ -49,7 +49,7 @@ export interface VersionDataLibrary {
 export type VersionDataArgument =
     | {
           rules: VersionDataRule[];
-          value: string[];
+          value: string | string[];
       }
     | string;
 
