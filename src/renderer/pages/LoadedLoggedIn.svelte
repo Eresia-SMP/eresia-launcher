@@ -35,9 +35,12 @@
         const profile = await McProfileManager.getProfile(choosenVersion);
         if (!profile) throw "Error";
         profiles[profiles.findIndex(p => p.id === profile.id)] = profile;
+        console.log(1, profile);
 
         if (profile.downloadState === "absent") {
+            console.log(2, profile);
             const r = await McProfileManager.downloadProfile(profile.id);
+            console.log(r);
             if (!r) throw "Could not download profile";
             let callback: (id: string, total: number, progress: number) => void;
             callback = (id, total, progress) => {
@@ -53,6 +56,7 @@
             };
             LauncherEvents.on("mcProfileDownloadProgress", callback);
         } else if (profile.downloadState === "downloaded") {
+            console.log(3, profile);
             GameLauncher.startMCProfile(profile.id, {
                 auth: {
                     accessToken: $mojangLoginData.accessToken,

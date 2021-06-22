@@ -130,6 +130,8 @@ export async function downloadProfile(
     if (downloadState.downloadedSize == downloadState.totalSize) return true;
     if (profiles_download_lock.has(id)) return false;
     profiles_download_lock.add(id);
+    console.log(`Started profile ${id} download`);
+    console.log("Download state:", downloadState);
 
     let states: Promise<any>[] = [];
     if (downloadState.versionToDownload)
@@ -154,8 +156,10 @@ export async function downloadProfile(
                 );
             })
         );
+    console.log(`Waiting for ${states.length} tasks`);
     await Promise.all(states);
     profiles_download_lock.delete(id);
+    console.log(`Finished ${id} profile download`);
 
     return true;
 }

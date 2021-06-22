@@ -178,6 +178,7 @@ export async function getVersionDownloadState(id: string): Promise<{
             const libs = await resolveVersionLibraries(id);
             if (!libs) throw "Wtf";
             for (const { path: p, sha1, size, url } of libs) {
+                totalSize += size;
                 if ((await fileExists(p)) && (await getFileSHA1(p)) === sha1)
                     downloadedSize += size;
                 else files.push([p, url]);
@@ -224,8 +225,14 @@ export async function downloadVersion(
     if (!_.isObject(downloadState)) return false;
     if (downloadsLock.has(id)) return false;
     downloadsLock.add(id);
+    console.log(`Started version ${id} download`);
+    console.log("Download state:", {
+        downloadedSize: downloadState.downloadedSize,
+        totalSize: downloadState.totalSize,
+    });
 
     try {
+        console.log(`Downloading: ${downloadState.files.length} files`);
         // Download files, 10 at a times
         let filesToDownload = [...downloadState.files];
         while (filesToDownload.length > 0) {
@@ -253,7 +260,10 @@ export async function downloadVersion(
             );
         }
         // Download jvm
-        if (!_.isUndefined(downloadState.jvmToDownload))
+        if (!_.isUndefined(downloadState.jvmToDownload)) {
+            console.log(
+                `Downloading JVM ${downloadState.jvmToDownload} for version ${id}`
+            );
             await JVMVersionManager.downloadJVMVersion(
                 downloadState.jvmToDownload,
                 (bytes, _) => {
@@ -265,8 +275,11 @@ export async function downloadVersion(
                     );
                 }
             );
+        }
+        console.log(`Finished version ${id} download`);
         return true;
     } catch (error) {
+        console.log(`Error whole downloading version ${id}`, error);
         console.error(error);
         return false;
     } finally {
