@@ -59,7 +59,7 @@ async function reloadEresiaVersions() {
     versionsDataUrls = new Map(Object.entries(urls));
 }
 
-async function getVersionData(
+export async function getVersionData(
     version: string,
     shouldDownload: boolean = true,
     maxInheritance: number = 20
@@ -88,6 +88,48 @@ async function getVersionData(
     }
     versions.set(version, data);
     return data;
+}
+
+export async function getEffectiveVersionJVM(
+    id: string
+): Promise<JVMVersion | null> {
+    const data = await getVersionData(id);
+    if (!_.isObject(data)) return null;
+    let v = data.javaVersion?.majorVersion;
+    if (v !== 11 && v !== 8) v = 11;
+    return v as JVMVersion;
+}
+
+export async function resolveVersionLibraries(id: string): Promise<
+    | null
+    | {
+          url: string;
+          sha1: string;
+          path: string;
+          size: number;
+      }[]
+> {
+    const data = await getVersionData(id);
+    if (!_.isObject(data)) return null;
+
+    return data.libraries
+        .filter(l => !(l.rules && !resolveVersionDataRules(l.rules)))
+        .flatMap(l => {
+            let artifacts: {
+                url: string;
+                sha1: string;
+                path: string;
+                size: number;
+            }[] = [];
+            if (l.downloads.artifact) {
+                const p = path.join("libraries", l.downloads.artifact.path);
+                artifacts.push({
+                    ...l.downloads.artifact,
+                    path: p,
+                });
+            }
+            return artifacts;
+        });
 }
 
 export async function getVersionDownloadState(id: string): Promise<{
@@ -132,27 +174,15 @@ export async function getVersionDownloadState(id: string): Promise<{
             else downloadedSize += updateSize;
         })(),
         // All libraries download
-        ...data.libraries.map(library =>
-            (async () => {
-                if (library.rules && !resolveVersionDataRules(library.rules))
-                    return;
-                // TODO: Add natives download
-                if (library.downloads.artifact) {
-                    totalSize += library.downloads.artifact.size;
-                    const p = path.join(
-                        "libraries",
-                        library.downloads.artifact.path
-                    );
-                    if (
-                        (await fileExists(p)) &&
-                        (await getFileSHA1(p)) ===
-                            library.downloads.artifact.sha1
-                    )
-                        downloadedSize += library.downloads.artifact.size;
-                    else files.push([p, library.downloads.artifact.url]);
-                }
-            })()
-        ),
+        (async () => {
+            const libs = await resolveVersionLibraries(id);
+            if (!libs) throw "Wtf";
+            for (const { path: p, sha1, size, url } of libs) {
+                if ((await fileExists(p)) && (await getFileSHA1(p)) === sha1)
+                    downloadedSize += size;
+                else files.push([p, url]);
+            }
+        })(),
         // Assets Index
         (async () => {
             const indexesFilePath = `assets/indexes/${data.assets}.json`;

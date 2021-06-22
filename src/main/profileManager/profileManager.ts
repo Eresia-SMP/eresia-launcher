@@ -43,6 +43,10 @@ export function getAllProfiles(): string[] {
     return Array.from(profiles_data.keys());
 }
 
+export function getProfileData(id: string): McProfileData | null {
+    return profiles_data.get(id) ?? null;
+}
+
 export async function getProfile(id: string): Promise<McProfile | null> {
     const data = profiles_data.get(id);
     if (!data) return null;

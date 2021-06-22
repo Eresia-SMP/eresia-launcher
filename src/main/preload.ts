@@ -1,6 +1,7 @@
 import type { McVersionManagerApi } from "../common/mcVersionManager";
 import type { McProfile, McProfileManagerApi } from "../common/profileManager";
 import type { LauncherEventsApi } from "../common/launcherEvents";
+import type { GameLauncherApi } from "../common/gameLauncher";
 import { contextBridge, ipcRenderer } from "electron";
 import * as _ from "lodash";
 
@@ -30,3 +31,8 @@ const mcProfileApi: McProfileManagerApi = {
     downloadProfile: _.partial(ipcRenderer.invoke, "downloadMcProfile"),
 };
 contextBridge.exposeInMainWorld("McProfileManager", mcProfileApi);
+
+const gameLauncherApi: GameLauncherApi = {
+    startMCProfile: _.partial(ipcRenderer.invoke, "startMCProfile"),
+};
+contextBridge.exposeInMainWorld("GameLauncher", gameLauncherApi);

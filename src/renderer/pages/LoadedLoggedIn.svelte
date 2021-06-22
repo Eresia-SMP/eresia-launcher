@@ -29,11 +29,16 @@
         .replace("downloaded", "Play");
 
     async function onButtonPress() {
+        if (!$mojangLoginData) return;
+
         profileLoadingState = { type: "disabled" };
         const profile = await McProfileManager.getProfile(choosenVersion);
         if (!profile) throw "Error";
+        profiles[profiles.findIndex(p => p.id === profile.id)] = profile;
+
         if (profile.downloadState === "absent") {
-            McProfileManager.downloadProfile(profile.id);
+            const r = await McProfileManager.downloadProfile(profile.id);
+            if (!r) throw "Could not download profile";
             let callback: (id: string, total: number, progress: number) => void;
             callback = (id, total, progress) => {
                 if (id !== profile.id) return;
@@ -47,9 +52,16 @@
                     LauncherEvents.off("mcProfileDownloadProgress", callback);
             };
             LauncherEvents.on("mcProfileDownloadProgress", callback);
+        } else if (profile.downloadState === "downloaded") {
+            GameLauncher.startMCProfile(profile.id, {
+                auth: {
+                    accessToken: $mojangLoginData.accessToken,
+                    playerName: $mojangLoginData.profile.name,
+                    uuid: $mojangLoginData.profile.uuid,
+                },
+            });
         }
     }
-
 </script>
 
 <div class="absolute inset-0 flex flex-col justify-center">
