@@ -20,7 +20,8 @@ export function init() {
     ipcMain.handle(
         "startMCProfile",
         async (e, v: string, options: GameStartOptions) => {
-            if (_.isString(v) || !_.isObject(options)) throw "Invalid argument";
+            if (!_.isString(v) || !_.isObject(options))
+                throw "Invalid argument";
             let r = await startProfile(v, options);
             if (!r || !currentStartedGame) return false;
             currentStartedGame.on("close", code =>
