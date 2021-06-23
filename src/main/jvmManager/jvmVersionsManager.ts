@@ -17,6 +17,10 @@ import {
     writeFile,
 } from "../index";
 
+export function isJVMVersion(a: any): a is JVMVersion {
+    return [8, 11].includes(a);
+}
+
 const tempFolder = path.resolve(
     os.tmpdir(),
     Array(50)
@@ -32,11 +36,11 @@ export async function init() {
     });
 
     ipcMain.handle("getJVMDownloadState", (_, v: JVMVersion) => {
-        if (v !== 8 && v !== 11) throw "Invalid argument";
+        if (!isJVMVersion(v)) throw "Invalid argument";
         return getJVMDownloadState(v);
     });
     ipcMain.handle("downloadJVMVersion", (e, v: JVMVersion) => {
-        if (v !== 8 && v !== 11) throw "Invalid argument";
+        if (!isJVMVersion(v)) throw "Invalid argument";
         return downloadJVMVersion(v, p =>
             e.sender.send("jvmVersionDownloadProgress", v, p)
         );

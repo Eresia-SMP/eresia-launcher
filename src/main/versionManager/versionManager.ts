@@ -97,7 +97,8 @@ export async function getEffectiveVersionJVM(
     const data = await getVersionData(id);
     if (!_.isObject(data)) return null;
     let v = data.javaVersion?.majorVersion;
-    if (v !== 11 && v !== 8) v = 11;
+    if (!JVMVersionManager.isJVMVersion(v))
+        v = config.defaultJVMVersion as JVMVersion;
     return v as JVMVersion;
 }
 
@@ -228,7 +229,8 @@ export async function getVersionDownloadState(id: string): Promise<{
         // JVM Version download
         (async () => {
             let targetJvm = data.javaVersion?.majorVersion as JVMVersion;
-            if (targetJvm !== 8 && targetJvm !== 11) targetJvm = 11;
+            if (!JVMVersionManager.isJVMVersion(targetJvm))
+                targetJvm = config.defaultJVMVersion as JVMVersion;
             const downloadState = await JVMVersionManager.getJVMDownloadState(
                 targetJvm
             );

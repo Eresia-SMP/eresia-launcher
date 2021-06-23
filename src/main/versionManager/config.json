@@ -1,4 +1,5 @@
 {
     "eresiaVersionsUrl": "https://storage.googleapis.com/eresia_launcher_files/versions.json",
-    "assetDownloadConcurrency": 15
+    "assetDownloadConcurrency": 15,
+    "defaultJVMVersion": 11
 }
