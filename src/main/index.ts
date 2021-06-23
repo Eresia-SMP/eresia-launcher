@@ -9,11 +9,13 @@ import * as JvmManager from "./jvmManager/jvmVersionsManager";
 import * as VersionManager from "./versionManager/versionManager";
 import * as ProfileManager from "./profileManager/profileManager";
 import * as GameLauncher from "./gameLauncher/gameLauncher";
+import { autoUpdater } from "electron-updater";
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
 
 app.on("ready", async () => {
+    autoUpdater.checkForUpdatesAndNotify();
     mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
 
     await JvmManager.init();
@@ -45,6 +47,7 @@ function createWindow() {
             preload: path.resolve(app.getAppPath(), "dist/main/preload.js"),
         },
         backgroundColor: "#292D3E",
+        show: false,
     });
 
     console.log(path.resolve(app.getAppPath(), "dist/renderer/index.html"));
@@ -57,6 +60,10 @@ function createWindow() {
           )}`;
 
     window.loadURL(URL);
+
+    window.on("ready-to-show", () => {
+        window?.show();
+    });
 }
 
 /*

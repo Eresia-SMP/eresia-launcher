@@ -30,10 +30,15 @@
             "artifactName": "${productName} Setup ${version}.${ext}",
             "deleteAppDataOnUninstall": true,
             "allowToChangeInstallationDirectory": true
+        },
+        "publish": {
+            "provider": "github",
+            "owner": "Heavenston"
         }
     },
     "dependencies": {
         "electron-is-dev": "^2.0.0",
+        "electron-updater": "^4.3.9",
         "extract-zip": "^2.0.1",
         "lodash": "^4.17.21",
         "node-fetch": "^2.6.1",
