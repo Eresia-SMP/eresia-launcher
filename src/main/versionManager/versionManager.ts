@@ -122,7 +122,13 @@ export async function resolveVersionClasspath(
             )
             .flatMap(l => {
                 if (l.natives && l.downloads.classifiers) {
-                    return [];
+                    if (platF && l.natives[platF])
+                        return path.resolve(
+                            mainFolderPath,
+                            "libraries",
+                            l.downloads.classifiers[l.natives[platF] as any]
+                                .path
+                        );
                 } else
                     return path.resolve(
                         mainFolderPath,
