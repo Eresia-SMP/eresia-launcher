@@ -15,7 +15,8 @@ export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
 
 app.on("ready", async () => {
-    autoUpdater.checkForUpdatesAndNotify();
+    await autoUpdater.checkForUpdatesAndNotify();
+
     mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
 
     await JvmManager.init();
