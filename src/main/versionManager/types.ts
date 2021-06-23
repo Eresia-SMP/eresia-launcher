@@ -33,7 +33,7 @@ export interface VersionDataLibrary {
     };
     rules?: VersionDataRule[];
     downloads: {
-        artifact?: {
+        artifact: {
             /** Path to store the downloaded artifact, relative to the "libraries" directory in .minecraft. */
             path: string;
         } & VersionDataDownload;
@@ -43,6 +43,9 @@ export interface VersionDataLibrary {
                 path: string;
             } & VersionDataDownload;
         };
+    };
+    extract?: {
+        exclude: string[];
     };
 }
 

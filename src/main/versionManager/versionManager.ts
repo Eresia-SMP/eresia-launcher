@@ -21,6 +21,7 @@ import {
     readFileToString,
 } from "../index";
 import * as JVMVersionManager from "../jvmManager/jvmVersionsManager";
+import * as extract from "extract-zip";
 
 let versions: Map<string, VersionData> = new Map();
 let versionsDataUrls: Map<string, LinkToJson<VersionData>> = new Map();
@@ -100,24 +101,57 @@ export async function getEffectiveVersionJVM(
     return v as JVMVersion;
 }
 
-export async function resolveVersionLibraries(id: string): Promise<
+export async function resolveVersionClasspath(
+    id: string
+): Promise<null | string> {
+    let separator: string;
+    if (process.platform === "win32") separator = ";";
+    else separator = ":";
+
+    const data = await getVersionData(id);
+    if (!_.isObject(data)) return null;
+    let platF: "osx" | "windows" | "linux" | null = null;
+    if (os.platform() === "win32") platF = "windows";
+    else if (os.platform() === "linux") platF = "linux";
+    else if (os.platform() === "darwin") platF = "osx";
+
+    return [
+        ...data.libraries
+            .filter(
+                l => !(l.rules && resolveVersionDataRules(l.rules) !== "allow")
+            )
+            .flatMap(l => {
+                if (l.natives && l.downloads.classifiers) {
+                    return [];
+                } else
+                    return path.resolve(
+                        mainFolderPath,
+                        "libraries",
+                        l.downloads.artifact.path
+                    );
+            }),
+        path.resolve(mainFolderPath, "versions", id, `${id}.jar`),
+    ]
+        .filter(a => !!a)
+        .join(separator);
+}
+
+async function resolveVersionLibraries(id: string): Promise<
     | null
     | {
           url: string;
           sha1: string;
           path: string;
           size: number;
+          extract?: string;
       }[]
 > {
     const data = await getVersionData(id);
     if (!_.isObject(data)) return null;
     let platF: "osx" | "windows" | "linux" | null = null;
-    if (os.platform() === "win32")
-        platF = "windows";
-    else if (os.platform() === "linux")
-        platF = "linux";
-    else if (os.platform() === "darwin")
-        platF = "osx";
+    if (os.platform() === "win32") platF = "windows";
+    else if (os.platform() === "linux") platF = "linux";
+    else if (os.platform() === "darwin") platF = "osx";
 
     return data.libraries
         .filter(l => !(l.rules && !resolveVersionDataRules(l.rules)))
@@ -127,21 +161,33 @@ export async function resolveVersionLibraries(id: string): Promise<
                 sha1: string;
                 path: string;
                 size: number;
+                extract?: string;
             }[] = [];
-            if (l.downloads.artifact) {
-                const p = path.join("libraries", l.downloads.artifact.path);
-                artifacts.push({
-                    ...l.downloads.artifact,
-                    path: p,
-                });
-            }
-            if (l.natives && l.downloads.classifiers && platF && l.natives[platF]) {
+            artifacts.push({
+                ...l.downloads.artifact,
+                path: path.join("libraries", l.downloads.artifact.path),
+            });
+
+            if (
+                l.natives &&
+                l.downloads.classifiers &&
+                platF &&
+                l.natives[platF]
+            ) {
                 const a = l.downloads.classifiers[l.natives[platF] as any];
                 const p = path.join("libraries", a.path);
-                artifacts.push({
-                    ...a,
-                    path: p,
-                });
+                if (l.extract) {
+                    artifacts.push({
+                        ...a,
+                        path: p,
+                        extract: path.join("versions", id, "natives"),
+                    });
+                } else {
+                    artifacts.push({
+                        ...a,
+                        path: p,
+                    });
+                }
             }
             return artifacts;
         });
@@ -150,14 +196,14 @@ export async function resolveVersionLibraries(id: string): Promise<
 export async function getVersionDownloadState(id: string): Promise<{
     totalSize: number;
     downloadedSize: number;
-    files: [path: string, url: string][];
+    files: { path: string; url: string; extract?: string }[];
     jvmToDownload?: JVMVersion;
 } | null> {
     const data = await getVersionData(id, true);
     if (!_.isObject(data)) return null;
     let totalSize = 0;
     let downloadedSize = 0;
-    const files: [path: string, url: string][] = [];
+    const files: { path: string; url: string; extract?: string }[] = [];
     let jvmToDownload: undefined | JVMVersion = undefined;
 
     await Promise.all([
@@ -171,7 +217,7 @@ export async function getVersionDownloadState(id: string): Promise<{
                 (await getFileSHA1(p)) === data.downloads.client.sha1
             )
                 downloadedSize += data.downloads.client.size;
-            else files.push([p, data.downloads.client.url]);
+            else files.push({ path: p, url: data.downloads.client.url });
         })(),
         // JVM Version download
         (async () => {
@@ -192,11 +238,11 @@ export async function getVersionDownloadState(id: string): Promise<{
         (async () => {
             const libs = await resolveVersionLibraries(id);
             if (!libs) throw "Wtf";
-            for (const { path: p, sha1, size, url } of libs) {
+            for (const { path: p, sha1, size, url, extract } of libs) {
                 totalSize += size;
                 if ((await fileExists(p)) && (await getFileSHA1(p)) === sha1)
                     downloadedSize += size;
-                else files.push([p, url]);
+                else files.push({ path: p, url, extract });
             }
         })(),
         // Assets Index
@@ -217,10 +263,10 @@ export async function getVersionDownloadState(id: string): Promise<{
                 const p = `assets/objects/${hashStart}/${hash}`;
                 if (await fileExists(p)) downloadedSize += object.size;
                 else
-                    files.push([
-                        p,
-                        `https://resources.download.minecraft.net/${hashStart}/${hash}`,
-                    ]);
+                    files.push({
+                        path: p,
+                        url: `https://resources.download.minecraft.net/${hashStart}/${hash}`,
+                    });
             }
         })(),
     ]);
@@ -260,9 +306,9 @@ export async function downloadVersion(
                             config.assetDownloadConcurrency
                         )
                     )
-                    .map(([path, url]) =>
+                    .map(({ path: p, url, extract: extractPath }) =>
                         (async () => {
-                            await downloadFile(url, path, a => {
+                            await downloadFile(url, p, a => {
                                 downloadState.downloadedSize += a;
                                 onProgress?.(
                                     a,
@@ -270,6 +316,17 @@ export async function downloadVersion(
                                     downloadState.downloadedSize
                                 );
                             });
+                            if (extractPath) {
+                                console.log(
+                                    `Extracting ${p} to ${extractPath}`
+                                );
+                                await extract(path.resolve(mainFolderPath, p), {
+                                    dir: path.resolve(
+                                        mainFolderPath,
+                                        extractPath
+                                    ),
+                                });
+                            }
                         })()
                     )
             );
