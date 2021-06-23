@@ -34,7 +34,7 @@
         },
         "publish": {
             "provider": "github",
-            "owner": "Heavenston"
+            "owner": "Eresia-SMP"
         },
         "files": [
             "node_modules",
