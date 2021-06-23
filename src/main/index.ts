@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, protocol } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import fetch from "node-fetch";
@@ -42,14 +42,19 @@ function createWindow() {
         height: 800,
         webPreferences: {
             webSecurity: false,
-            preload: path.resolve(__dirname, "preload.js"),
+            preload: path.resolve(app.getAppPath(), "dist/main/preload.js"),
         },
         backgroundColor: "#292D3E",
     });
 
+    console.log(path.resolve(app.getAppPath(), "dist/renderer/index.html"));
+
     const URL = isDev
         ? `http://localhost:1234`
-        : `file://${path.resolve(__dirname, "dist/renderer/index.html")}`;
+        : `file://${path.resolve(
+              app.getAppPath(),
+              "dist/renderer/index.html"
+          )}`;
 
     window.loadURL(URL);
 }
