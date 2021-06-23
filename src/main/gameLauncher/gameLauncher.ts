@@ -148,7 +148,6 @@ export async function startProfile(
 
     currentStartedGame = spawn(jvmExecutablePath, args, {
         cwd,
-        detached: true,
     });
 
     currentStartedGame.on("error", e => console.error(e));
