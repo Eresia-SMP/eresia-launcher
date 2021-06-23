@@ -18,7 +18,7 @@ import {
 } from "../index";
 
 export function isJVMVersion(a: any): a is JVMVersion {
-    return [8, 11].includes(a);
+    return [8, 11, 16].includes(a);
 }
 
 const tempFolder = path.resolve(
@@ -147,54 +147,63 @@ export async function downloadJVMVersion(
         if (downloadState.downloadedSize !== downloadState.totalSize)
             onProgress?.(chunk.length, downloadState);
     });
-    response.body.on("end", async () => {
-        writeStream.close();
 
-        const extractFolder = path.resolve(
-            tempFolder,
-            Array(50)
-                .fill("")
-                .map(_ => Math.floor(Math.random() * 10).toString())
-                .join("")
-        );
-        const targetFolder = path.resolve(mainFolderPath, "jvm", v.toString());
-        await fs.promises.rm(targetFolder, {
-            recursive: true,
-            force: true,
-        });
-        await fs.promises.mkdir(path.resolve(mainFolderPath, "jvm"), {
-            recursive: true,
-        });
+    await new Promise<void>(resolve => {
+        response.body.on("end", async () => {
+            writeStream.close();
 
-        await fs.promises.mkdir(extractFolder, { recursive: true });
-        await extract(tempFile, {
-            dir: extractFolder,
-        });
-        if (fs.existsSync(path.resolve(extractFolder, "bin"))) {
-            await fs.promises.rename(extractFolder, targetFolder);
-        } else {
-            await fs.promises.rename(
-                path.join(
-                    extractFolder,
-                    (
-                        await fs.promises.readdir(extractFolder)
-                    )[0]
-                ),
-                targetFolder
+            const extractFolder = path.resolve(
+                tempFolder,
+                Array(50)
+                    .fill("")
+                    .map(_ => Math.floor(Math.random() * 10).toString())
+                    .join("")
             );
-        }
+            const targetFolder = path.resolve(
+                mainFolderPath,
+                "jvm",
+                v.toString()
+            );
+            await fs.promises.rm(targetFolder, {
+                recursive: true,
+                force: true,
+            });
+            await fs.promises.mkdir(path.resolve(mainFolderPath, "jvm"), {
+                recursive: true,
+            });
 
-        downloadState = {
-            type: "downloaded",
-            totalSize: update.size,
-            updateDate: update.date,
-        };
-        downloadStates.set(v, downloadState);
-        await setJVMSavedDownloadState(v, {
-            totalSize: update.size,
-            updateDate: update.date.toUTCString(),
+            await fs.promises.mkdir(extractFolder, { recursive: true });
+            await extract(tempFile, {
+                dir: extractFolder,
+            });
+            if (fs.existsSync(path.resolve(extractFolder, "bin"))) {
+                await fs.promises.rename(extractFolder, targetFolder);
+            } else {
+                await fs.promises.rename(
+                    path.join(
+                        extractFolder,
+                        (
+                            await fs.promises.readdir(extractFolder)
+                        )[0]
+                    ),
+                    targetFolder
+                );
+            }
+
+            downloadState = {
+                type: "downloaded",
+                totalSize: update.size,
+                updateDate: update.date,
+            };
+            downloadStates.set(v, downloadState);
+            await setJVMSavedDownloadState(v, {
+                totalSize: update.size,
+                updateDate: update.date.toUTCString(),
+            });
+            onProgress?.(lastChunkSize, downloadState);
+
+            resolve();
         });
-        onProgress?.(lastChunkSize, downloadState);
     });
 
     return isOk;

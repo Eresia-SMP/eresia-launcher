@@ -1,4 +1,4 @@
-export type JVMVersion = 8 | 11;
+export type JVMVersion = 8 | 11 | 16;
 
 export type JVMDownloadState =
     | { type: "downloaded"; updateDate: Date; totalSize: number }
