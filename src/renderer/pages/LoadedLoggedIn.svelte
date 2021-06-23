@@ -37,12 +37,11 @@
         profiles[profiles.findIndex(p => p.id === profile.id)] = profile;
 
         if (profile.downloadState === "absent") {
-            McProfileManager.downloadProfile(profile.id).catch(r => {
-                if (!r) console.error("Could not download profile");
-            });
-            let callback: (id: string, total: number, progress: number) => void;
-            callback = (id, total, progress) => {
-                console.log("Progress", progress);
+            const callback: (
+                id: string,
+                total: number,
+                progress: number
+            ) => void = (id, total, progress) => {
                 if (id !== profile.id) return;
                 profileLoadingState = {
                     type: "downloading",
@@ -50,10 +49,21 @@
                     total: total,
                     progress: progress / total,
                 };
-                if (profileLoadingState.progress === 1)
-                    LauncherEvents.off("mcProfileDownloadProgress", callback);
             };
             LauncherEvents.on("mcProfileDownloadProgress", callback);
+
+            McProfileManager.downloadProfile(profile.id)
+                .catch(r => {
+                    if (!r) console.error("Could not download profile");
+                })
+                .then(() => McProfileManager.getProfile(choosenVersion))
+                .then(profile => {
+                    LauncherEvents.off("mcProfileDownloadProgress", callback);
+                    if (!profile) throw "Error";
+                    profiles[profiles.findIndex(p => p.id === profile.id)] =
+                        profile;
+                    profileLoadingState = { type: "idle" };
+                });
         } else if (profile.downloadState === "downloaded") {
             GameLauncher.startMCProfile(profile.id, {
                 auth: {

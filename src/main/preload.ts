@@ -9,11 +9,13 @@ let callbacksMap = new Map();
 const launcherEventsApi: LauncherEventsApi = {
     on(event: string, callback: CallableFunction) {
         const c = (_: any, ...a: any) => callback(...a);
-        callbacksMap.set(callback, c);
+        callbacksMap.set(callback.toString(), c);
         ipcRenderer.on(event, c);
     },
     off(event: string, callback: CallableFunction) {
-        ipcRenderer.off(event, callbacksMap.get(callback));
+        if (!callbacksMap.has(callback.toString()))
+            console.error("Tried to remove an unknown callback");
+        else ipcRenderer.off(event, callbacksMap.get(callback.toString()));
     },
 };
 contextBridge.exposeInMainWorld("LauncherEvents", launcherEventsApi);
