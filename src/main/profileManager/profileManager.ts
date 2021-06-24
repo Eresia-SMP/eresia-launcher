@@ -53,17 +53,16 @@ export async function getProfile(id: string): Promise<McProfile | null> {
     let dls: "downloaded" | "downloading" | "absent";
     if (profiles_download_lock.has(id)) dls = "downloading";
     else {
-        const versionDownloadState =
-            await VersionManager.getVersionDownloadState(data.version);
-        if (versionDownloadState === null) {
+        const profileDownloadState = await getProfileDownloadState(id);
+        if (profileDownloadState === null) {
             console.error(
-                `Could not find download state of version {${data.version}} of profile [${data.id}]`
+                `Could not find download state of profile [${data.id}]`
             );
             return null;
         }
         dls =
-            versionDownloadState.downloadedSize ==
-            versionDownloadState.totalSize
+            profileDownloadState.downloadedSize ==
+            profileDownloadState.totalSize
                 ? "downloaded"
                 : "absent";
     }
@@ -98,7 +97,7 @@ export async function getProfileDownloadState(
     }
     let gameFolderData: [url: string, path: string] | undefined = undefined;
     if (data.gameFolderData) {
-        const p = path.join("profiles_game_data", `${data.id}.zip`);
+        const p = path.join("profiles", "game_data", `${data.id}.zip`);
         totalSize += data.gameFolderData.size;
         if (
             (await fileExists(p)) &&
