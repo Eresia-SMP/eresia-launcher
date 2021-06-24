@@ -19,6 +19,7 @@
     "config": {
         "forge": {
             "packagerConfig": {
+                "icon": "build_resources/icon.ico",
                 "ignore": [
                     ".vscode",
                     ".prettierrc.yaml",
