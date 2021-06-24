@@ -15,7 +15,8 @@
         "watch:main": "concurrently \"gulp watch\" \"nodemon --watch dist/main --exec \\\"electron .\\\"\"",
         "dev": "gulp && concurrently \"yarn watch:renderer\" \"yarn watch:main\"",
         "package": "electron-forge package",
-        "make": "electron-forge make"
+        "make": "electron-forge make",
+        "electron:publish": "electron-forge publish"
     },
     "config": {
         "forge": {
