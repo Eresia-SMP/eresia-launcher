@@ -51,6 +51,7 @@ function createWindow() {
         },
         backgroundColor: "#292D3E",
         show: false,
+        icon: path.resolve(app.getAppPath(), "resources/icon.ico"),
     });
 
     console.log(path.resolve(app.getAppPath(), "dist/renderer/index.html"));

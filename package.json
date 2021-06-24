@@ -33,7 +33,7 @@
                 }
             ],
             "packagerConfig": {
-                "icon": "build_resources/icon.ico",
+                "icon": "resources/icon.ico",
                 "ignore": [
                     ".vscode",
                     ".prettierrc.yaml",
