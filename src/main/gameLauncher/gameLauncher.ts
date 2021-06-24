@@ -1,19 +1,14 @@
 import * as ProfileManager from "../profileManager/profileManager";
 import * as VersionManager from "../versionManager/versionManager";
 import { GameStartOptions } from "../../common/gameLauncher";
-import * as JvmManager from "../jvmManager/jvmVersionsManager";
 import * as path from "path";
-import {
-    fileExists,
-    mainFolderPath,
-    readFileToString,
-    writeFile,
-} from "../index";
+import { mainFolderPath } from "../index";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import * as config from "./config.json";
 import _ = require("lodash");
 import { ipcMain } from "electron";
 import * as fs from "fs";
+import * as extract from "extract-zip";
 
 let currentStartedGame: ChildProcessWithoutNullStreams | null = null;
 
@@ -57,6 +52,27 @@ export async function startProfile(
         profileData.version
     );
     if (!_.isObject(versionData)) return false;
+
+    if (profileData.gameFolderData) {
+        console.log(
+            `Extracting game folder data for profile ${profileData.id}`
+        );
+        fs.promises.mkdir(path.resolve(mainFolderPath, "profiles", id), {
+            recursive: true,
+        });
+        await extract(
+            path.resolve(
+                mainFolderPath,
+                "profiles",
+                "game_data",
+                `${profileData.id}.zip`
+            ),
+            {
+                dir: path.resolve(mainFolderPath, "profiles", id),
+            }
+        );
+        console.log("Extracted");
+    }
 
     const jvmExecutablePath = path.join(
         mainFolderPath,
