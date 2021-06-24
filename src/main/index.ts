@@ -9,14 +9,15 @@ import * as JvmManager from "./jvmManager/jvmVersionsManager";
 import * as VersionManager from "./versionManager/versionManager";
 import * as ProfileManager from "./profileManager/profileManager";
 import * as GameLauncher from "./gameLauncher/gameLauncher";
-import { autoUpdater } from "electron-updater";
+
+if (require("electron-squirrel-startup")) {
+    app.quit();
+}
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
 
 app.on("ready", async () => {
-    await autoUpdater.checkForUpdatesAndNotify();
-
     mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
 
     await JvmManager.init();
