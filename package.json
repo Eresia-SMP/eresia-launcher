@@ -18,6 +18,18 @@
     },
     "config": {
         "forge": {
+            "publishers": [
+                {
+                    "name": "@electron-forge/publisher-github",
+                    "config": {
+                        "repository": {
+                            "owner": "Eresia-SMP",
+                            "name": "eresia-launcher"
+                        },
+                        "draft": true
+                    }
+                }
+            ],
             "packagerConfig": {
                 "icon": "build_resources/icon.ico",
                 "ignore": [
@@ -52,7 +64,8 @@
         "extract-zip": "^2.0.1",
         "lodash": "^4.17.21",
         "node-fetch": "^2.6.1",
-        "sha1-file": "^2.0.0"
+        "sha1-file": "^2.0.0",
+        "update-electron-app": "^2.0.1"
     },
     "devDependencies": {
         "@electron-forge/cli": "^6.0.0-beta.57",

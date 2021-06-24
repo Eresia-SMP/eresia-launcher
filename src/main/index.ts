@@ -13,6 +13,7 @@ import * as GameLauncher from "./gameLauncher/gameLauncher";
 if (require("electron-squirrel-startup")) {
     app.quit();
 }
+require("update-electron-app")();
 
 export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
