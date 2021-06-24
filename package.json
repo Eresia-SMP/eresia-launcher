@@ -1,6 +1,7 @@
 {
     "name": "eresia_smp_launcher",
     "description": "Launcher for the Eresia SMP",
+    "private": true,
     "author": "Heavenstone",
     "repository": {
         "url": "https://github.com/Eresia-SMP/eresia-launcher"
