@@ -36,6 +36,8 @@ export async function startProfile(
 
     const profileData = ProfileManager.getProfileData(id);
     if (!profileData) return false;
+    console.log(`Using version ${profileData.version}`);
+
     const profileDownloadState = await ProfileManager.getProfileDownloadState(
         id
     );

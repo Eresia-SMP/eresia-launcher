@@ -83,7 +83,7 @@ export async function getVersionData(
         );
         if (parent === "notDownloaded") return "notDownloaded";
         if (_.isObject(parent))
-            data = _.mergeWith(data, parent, (a, b) => {
+            data = _.mergeWith(parent, data, (a, b) => {
                 if (_.isArray(a)) return a.concat(b);
             });
     }
@@ -121,6 +121,7 @@ export async function resolveVersionClasspath(
             .filter(
                 l => !(l.rules && resolveVersionDataRules(l.rules) !== "allow")
             )
+            .filter(l => l.classpath_ignore)
             .flatMap(l => {
                 if (l.natives && l.downloads.classifiers) {
                     if (platF && l.natives[platF])
