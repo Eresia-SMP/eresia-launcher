@@ -84,7 +84,10 @@ export async function downloadFile(
         recursive: true,
     });
     const response = await fetch(url);
-    if (!response.ok) throw new Error(response.statusText);
+    if (!response.ok)
+        throw new Error(
+            `Could not download url ${url}: ${response.statusText}`
+        );
     response.body.pipe(fs.createWriteStream(fullPath));
     response.body.on("data", b => onProgress?.(b.length));
     await new Promise<void>(resolve =>
