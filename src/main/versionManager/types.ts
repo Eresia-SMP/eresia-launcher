@@ -47,8 +47,6 @@ export interface VersionDataLibrary {
     extract?: {
         exclude: string[];
     };
-    /** Custom field for forge */
-    classpath_ignore?: boolean;
 }
 
 export type VersionDataArgument =

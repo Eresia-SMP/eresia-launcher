@@ -121,7 +121,6 @@ export async function resolveVersionClasspath(
             .filter(
                 l => !(l.rules && resolveVersionDataRules(l.rules) !== "allow")
             )
-            .filter(l => l.classpath_ignore)
             .flatMap(l => {
                 if (l.natives && l.downloads.classifiers) {
                     if (platF && l.natives[platF])
