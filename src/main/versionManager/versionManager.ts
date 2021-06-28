@@ -35,7 +35,7 @@ export async function init() {
     ipcMain.handle("getAllMcVersions", async () =>
         Promise.all(getAllVersion().map(_.unary(getVersionData)))
     );
-    ipcMain.handle("getMcVersion", (a, id: string) => {
+    ipcMain.handle("getMcVersion", (_event, id: string) => {
         if (!_.isString(id)) throw "Invalid argument";
         return getVersion(id);
     });
