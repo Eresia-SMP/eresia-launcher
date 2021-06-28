@@ -19,7 +19,10 @@ export let mainFolderPath: string = "";
 let window: BrowserWindow | null = null;
 
 app.on("ready", async () => {
-    mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
+    if (process.platform === "linux")
+        mainFolderPath = path.relative(app.getPath("appData"), "eresia_smp")
+    else
+        mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
 
     await JvmManager.init();
     await VersionManager.init();
