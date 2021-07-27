@@ -34,12 +34,18 @@ export interface VersionDataLibrary {
     rules?: VersionDataRule[];
     downloads: {
         artifact: {
-            /** Path to store the downloaded artifact, relative to the "libraries" directory in .minecraft. */
+            /**
+             * Path to store the downloaded artifact,
+             * relative to the "libraries" directory in .minecraft.
+             * */
             path: string;
         } & VersionDataDownload;
         classifiers?: {
             [key: string]: {
-                /** Path to store the downloaded artifact, relative to the "libraries" directory in .minecraft. */
+                /**
+                 * Path to store the downloaded artifact,
+                 * relative to the "libraries" directory in .minecraft.
+                 * */
                 path: string;
             } & VersionDataDownload;
         };
