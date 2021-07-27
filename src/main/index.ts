@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol } from "electron";
+import { app, BrowserWindow } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import fetch from "node-fetch";
@@ -23,6 +23,7 @@ app.on("ready", async () => {
         mainFolderPath = path.relative(app.getPath("appData"), "eresia_smp")
     else
         mainFolderPath = path.resolve(app.getPath("appData"), ".eresia_smp");
+    console.log(`Main folder path is ${mainFolderPath}`);
 
     await JvmManager.init();
     await VersionManager.init();
